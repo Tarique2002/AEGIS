@@ -32,9 +32,11 @@ class AgentRuntime:
         self,
         provider: LLMProvider | None = None,
         emitter: EventEmitter | None = None,
+        learning_service: Any | None = None,
     ) -> None:
         self.provider = provider or get_llm_provider()
         self.emitter = emitter or EventEmitter()
+        self.learning_service = learning_service
 
     async def execute_task(
         self,
@@ -239,6 +241,39 @@ class AgentRuntime:
                 session=session,
             )
 
+            # Record Self-Learning Trajectory (Phase 11)
+            if user_id:
+                try:
+                    from app.learning.schemas import TrajectoryCreate
+                    from app.learning.service import SelfLearningService
+
+                    learning_svc = self.learning_service or SelfLearningService(
+                        event_emitter=self.emitter
+                    )
+                    traj_data = TrajectoryCreate(
+                        task_id=task_uuid,
+                        run_id=run_uuid,
+                        goal=objective,
+                        planning_steps=[],
+                        selected_tools=[],
+                        tool_calls_metadata=[],
+                        worker_involvement=[],
+                        intermediate_decisions=[],
+                        failures=[],
+                        retries_count=0,
+                        final_outcome=state.final_result,
+                        is_success=True,
+                        duration_ms=duration_ms,
+                        tokens_used=structured_resp.total_tokens,
+                    )
+                    await learning_svc.process_completed_run(
+                        create_data=traj_data,
+                        trusted_user_id=user_id,
+                        session=session,
+                    )
+                except Exception as exc:
+                    logger.warning(f"Self-learning trajectory recording skipped: {exc}")
+
             await session.commit()
             return state
 
@@ -284,6 +319,31 @@ class AgentRuntime:
             run_model.latency_ms = duration_ms
             run_model.ended_at = call_end
             run_model.state_snapshot = state.model_dump(mode="json")
+
+            # Record Self-Learning Failure Trajectory (Phase 11)
+            if user_id:
+                try:
+                    from app.learning.schemas import TrajectoryCreate
+                    from app.learning.service import SelfLearningService
+
+                    learning_svc = self.learning_service or SelfLearningService(
+                        event_emitter=self.emitter
+                    )
+                    traj_data = TrajectoryCreate(
+                        task_id=task_uuid,
+                        run_id=run_uuid,
+                        goal=objective,
+                        failures=[{"error": error_message}],
+                        is_success=False,
+                        duration_ms=duration_ms,
+                    )
+                    await learning_svc.process_completed_run(
+                        create_data=traj_data,
+                        trusted_user_id=user_id,
+                        session=session,
+                    )
+                except Exception as exc:
+                    logger.warning(f"Self-learning failure trajectory recording skipped: {exc}")
 
             await session.commit()
             raise

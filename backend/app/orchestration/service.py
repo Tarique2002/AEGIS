@@ -200,6 +200,41 @@ class OrchestrationService:
             session=session,
         )
 
+        # 7. Record Multi-Agent Self-Learning Trajectory (Phase 11)
+        try:
+            from app.learning.schemas import TrajectoryCreate
+            from app.learning.service import SelfLearningService
+
+            learning_svc = SelfLearningService(event_emitter=self.event_emitter)
+            worker_involvement = [
+                {
+                    "worker_id": str(w.worker_id),
+                    "worker_type": w.worker_type.value,
+                    "status": w.status.value,
+                    "subtask": w.assigned_subtask,
+                    "error": w.error,
+                }
+                for w in state.workers
+            ]
+            traj_data = TrajectoryCreate(
+                task_id=request.task_id,
+                run_id=request.run_id,
+                goal=request.objective,
+                worker_involvement=worker_involvement,
+                final_outcome=state.final_result,
+                is_success=(state.status == OrchestrationStatus.COMPLETED),
+                duration_ms=float(state.budget.elapsed_time_ms),
+            )
+            await learning_svc.process_completed_run(
+                create_data=traj_data,
+                trusted_user_id=trusted_user_id,
+                session=session,
+                domain="orchestration",
+            )
+            await session.commit()
+        except Exception as exc:
+            logger.warning(f"Self-learning processing failed in OrchestrationService: {exc}")
+
         self._cancellation_tokens.pop(orchestration_id, None)
         return self._to_response(model)
 

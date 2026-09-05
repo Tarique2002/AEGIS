@@ -13,6 +13,15 @@ from app.db.models.compliance import (
 from app.db.models.episode import EpisodicMemoryModel
 from app.db.models.evaluation import EvaluationModel, ReflectionModel
 from app.db.models.event import ExecutionEventModel
+from app.db.models.learning import (
+    LearnedProcedureModel,
+    LearnedProcedureVersionModel,
+    LearningGovernanceConfigModel,
+    LearningSignalModel,
+    ProcedureGovernanceEvaluationModel,
+    ProcedurePromotionAuditModel,
+    TrajectoryModel,
+)
 from app.db.models.loop import AgentIterationModel, AgentLoopModel
 from app.db.models.orchestration import (
     DelegatedTaskModel,
@@ -53,4 +62,13 @@ __all__ = [
     "ComplianceReportModel",
     "ComplianceEvidenceModel",
     "AuditCheckpointModel",
+    "TrajectoryModel",
+    "LearningSignalModel",
+    "LearnedProcedureModel",
+    "LearnedProcedureVersionModel",
+    "LearningGovernanceConfigModel",
+    "ProcedureGovernanceEvaluationModel",
+    "ProcedurePromotionAuditModel",
 ]
+
+

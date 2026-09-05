@@ -10,6 +10,8 @@ from app.api.v1.endpoints import (
     compliance,
     evaluations,
     health,
+    learning,
+    learning_governance,
     memory,
     orchestrations,
     plans,
@@ -58,3 +60,11 @@ api_router.include_router(orchestrations.router)
 
 # Attach safety, risk policies, approvals & audit endpoints (Phase 8 subsystem)
 api_router.include_router(safety.router)
+
+# Attach self-learning & agent evolution engine endpoints (Phase 11 subsystem)
+api_router.include_router(learning.router)
+
+# Attach production learning governance, gates, & evolution endpoints (Phase 12 subsystem)
+api_router.include_router(learning_governance.router)
+
+

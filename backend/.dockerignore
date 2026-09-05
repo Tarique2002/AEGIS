@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+
+# Virtual Environments
+.venv
+venv/
+env/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Build & Package Artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Secrets & Local Environment Files (Keep .env.example)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE & OS Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Non-production directories
+scratch/

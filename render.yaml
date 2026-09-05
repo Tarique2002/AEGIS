@@ -1,0 +1,79 @@
+# ==============================================================================
+# Render Blueprint for AEGIS Autonomous AI Agent Platform
+# ==============================================================================
+services:
+  # AEGIS FastAPI Backend Web Service
+  - type: web
+    name: aegis-api
+    runtime: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -e .
+    startCommand: cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AUDIT_SIGNING_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aegis-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: aegis-redis
+          property: connectionString
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: ollama
+      - key: LLM_MODEL
+        value: llama3.2
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: SAFETY_ENABLED
+        value: "true"
+      - key: MAX_RISK_LEVEL
+        value: CRITICAL
+      - key: APPROVAL_REQUIRED_ABOVE
+        value: MEDIUM
+
+  # Managed Redis Cache Service
+  - type: redis
+    name: aegis-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: volatile-lru
+    ipAllowList: []
+
+databases:
+  # Managed PostgreSQL Database
+  - name: aegis-postgres
+    region: oregon
+    plan: starter
+    databaseName: aegis_db
+    user: aegis_user
+    ipAllowList: []

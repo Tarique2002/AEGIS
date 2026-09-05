@@ -96,7 +96,7 @@ def create_access_token(
     Generate a cryptographically signed HMAC-SHA256 Bearer access token with jti and scopes.
     """
     settings = Settings()
-    key = (secret_key or settings.SECRET_KEY).encode("utf-8")
+    key = (secret_key or settings.effective_jwt_secret).encode("utf-8")
     jti = token_id or str(uuid.uuid4())
 
     header = {"alg": "HS256", "typ": "JWT"}
@@ -128,7 +128,7 @@ def verify_access_token(
     Verify signature, expiration, and payload of a signed access token.
     """
     settings = Settings()
-    key = (secret_key or settings.SECRET_KEY).encode("utf-8")
+    key = (secret_key or settings.effective_jwt_secret).encode("utf-8")
 
     parts = token.split(".")
     if len(parts) != 3:

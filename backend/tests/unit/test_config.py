@@ -32,3 +32,50 @@ def test_redis_connection_url_with_password():
 def test_qdrant_connection_url_override():
     settings = Settings(QDRANT_URL="https://qdrant.cloud.io:6333")
     assert settings.qdrant_connection_url == "https://qdrant.cloud.io:6333"
+
+
+def test_production_missing_secret_fails_startup():
+    import pytest
+    with pytest.raises(ValueError, match="Production configuration error"):
+        Settings(ENVIRONMENT=Environment.PRODUCTION)
+
+
+def test_production_short_secret_fails_startup():
+    import pytest
+    with pytest.raises(ValueError, match="at least 32 characters"):
+        Settings(ENVIRONMENT=Environment.PRODUCTION, SECRET_KEY="too_short_secret")
+
+
+def test_production_valid_secret_key_succeeds():
+    secure_secret = "a" * 32
+    settings = Settings(ENVIRONMENT=Environment.PRODUCTION, SECRET_KEY=secure_secret)
+    assert settings.effective_jwt_secret == secure_secret
+
+
+def test_production_valid_jwt_secret_succeeds():
+    secure_jwt_secret = "b" * 32
+    settings = Settings(ENVIRONMENT=Environment.PRODUCTION, JWT_SECRET=secure_jwt_secret)
+    assert settings.effective_jwt_secret == secure_jwt_secret
+
+
+def test_cors_origins_parsing():
+    # Production without CORS_ORIGINS defaults to []
+    prod_settings = Settings(
+        ENVIRONMENT=Environment.PRODUCTION,
+        SECRET_KEY="x" * 32,
+        CORS_ORIGINS="",
+    )
+    assert prod_settings.cors_origins_list == []
+
+    # Production with specific comma-separated origins
+    prod_with_origins = Settings(
+        ENVIRONMENT=Environment.PRODUCTION,
+        SECRET_KEY="x" * 32,
+        CORS_ORIGINS="https://app.aegis.io, https://admin.aegis.io",
+    )
+    assert prod_with_origins.cors_origins_list == ["https://app.aegis.io", "https://admin.aegis.io"]
+
+    # Development without CORS_ORIGINS defaults to ["*"]
+    dev_settings = Settings(ENVIRONMENT=Environment.DEVELOPMENT, CORS_ORIGINS="")
+    assert dev_settings.cors_origins_list == ["*"]
+

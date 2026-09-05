@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,9 @@ class Environment(str, Enum):
     STAGING = "staging"
     PRODUCTION = "production"
     TESTING = "testing"
+
+
+DEFAULT_SECRET_KEY = "development_secret_key_change_in_production_min_32_chars"
 
 
 class Settings(BaseSettings):
@@ -29,20 +33,40 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    SECRET_KEY: str = "development_secret_key_change_in_production_min_32_chars"
+    SECRET_KEY: str = DEFAULT_SECRET_KEY
     JWT_SECRET: str | None = None
     JWT_REFRESH_SECRET: str | None = None
-    CORS_ORIGINS: str = "*"
+    CORS_ORIGINS: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
-        if not self.CORS_ORIGINS or self.CORS_ORIGINS.strip() == "*":
+        if not self.CORS_ORIGINS or not self.CORS_ORIGINS.strip():
+            if self.ENVIRONMENT in (Environment.DEVELOPMENT, Environment.TESTING):
+                return ["*"]
+            return []
+        if self.CORS_ORIGINS.strip() == "*":
             return ["*"]
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     @property
     def effective_jwt_secret(self) -> str:
         return self.JWT_SECRET or self.SECRET_KEY
+
+    @model_validator(mode="after")
+    def validate_production_configuration(self) -> "Settings":
+        if self.ENVIRONMENT in (Environment.PRODUCTION, Environment.STAGING):
+            secret = self.effective_jwt_secret
+            if (
+                not secret
+                or secret == DEFAULT_SECRET_KEY
+                or len(secret.strip()) < 32
+            ):
+                raise ValueError(
+                    "Production configuration error: In production/staging environments, "
+                    "a secure SECRET_KEY or JWT_SECRET of at least 32 characters must be provided. "
+                    "Default or development secret keys are strictly prohibited."
+                )
+        return self
 
     # Logging
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"

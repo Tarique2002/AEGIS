@@ -86,13 +86,17 @@ def create_app() -> FastAPI:
         return response
 
     # CORS Middleware with configurable production origins
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    origins = settings.cors_origins_list
+    if origins:
+        # Per W3C CORS specification, wildcard origin cannot be used with credentials
+        allow_credentials = False if origins == ["*"] else True
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=allow_credentials,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     # Register Global Exception Handlers
     register_exception_handlers(app)

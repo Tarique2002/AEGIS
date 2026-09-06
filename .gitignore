@@ -49,3 +49,10 @@ logs/
 data/
 qdrant_storage/
 postgres_data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+node_modules/
+dist/

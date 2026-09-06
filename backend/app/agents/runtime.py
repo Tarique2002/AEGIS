@@ -79,15 +79,8 @@ class AgentRuntime:
             )
             session.add(task_model)
             await session.flush()
-            await self.emitter.emit(
-                task_id=task_uuid,
-                run_id=run_uuid,
-                event_type=ExecutionEventType.TASK_CREATED,
-                payload={"objective": objective, "user_id": str(user_id) if user_id else None},
-                session=session,
-            )
 
-        # 3. Create AgentRun Record
+        # 3. Create AgentRun Record (must be added & flushed before ExecutionEvents reference run_id)
         provider_meta = self.provider.metadata()
         run_model = AgentRun(
             id=run_uuid,
@@ -99,6 +92,14 @@ class AgentRuntime:
         )
         session.add(run_model)
         await session.flush()
+
+        await self.emitter.emit(
+            task_id=task_uuid,
+            run_id=run_uuid,
+            event_type=ExecutionEventType.TASK_CREATED,
+            payload={"objective": objective, "user_id": str(user_id) if user_id else None},
+            session=session,
+        )
 
         await self.emitter.emit(
             task_id=task_uuid,
@@ -345,5 +346,6 @@ class AgentRuntime:
                 except Exception as exc:
                     logger.warning(f"Self-learning failure trajectory recording skipped: {exc}")
 
+            state.final_result = f"Task execution failed: {error_message}"
             await session.commit()
             raise

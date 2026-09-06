@@ -60,3 +60,24 @@ def test_admin_scope_wildcard() -> None:
 
     assert service.check_scope(admin_principal, "policy:write") is True
     assert service.check_scope(admin_principal, "audit:read") is True
+
+
+@pytest.mark.asyncio
+async def test_issue_access_token_endpoint() -> None:
+    from app.api.v1.endpoints.auth import TokenIssueRequest, issue_access_token
+
+    req = TokenIssueRequest(
+        email="operator@aegis.io",
+        roles=["ADMIN", "OPERATOR"],
+        scopes=["*"],
+    )
+    res = await issue_access_token(req)
+    assert res.token_type == "bearer"
+    assert res.access_token is not None
+    assert res.email == "operator@aegis.io"
+    assert "ADMIN" in res.roles
+
+    # Verify the issued token can be verified
+    principal = verify_access_token(res.access_token)
+    assert principal.email == "operator@aegis.io"
+    assert "ADMIN" in principal.roles

@@ -33,6 +33,8 @@ def upgrade() -> None:
         op.execute("ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS latency_ms DOUBLE PRECISION NOT NULL DEFAULT 0.0;")
         op.execute("ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ NOT NULL DEFAULT NOW();")
         op.execute("ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS ended_at TIMESTAMPTZ;")
+        op.execute("ALTER TABLE agent_runs ALTER COLUMN run_metadata DROP NOT NULL;")
+        op.execute("ALTER TABLE agent_runs ALTER COLUMN run_metadata SET DEFAULT '{}'::json;")
 
         # 2. execution_events audit timestamp columns
         op.execute("ALTER TABLE execution_events ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();")
@@ -46,6 +48,8 @@ def upgrade() -> None:
         op.execute("ALTER TABLE task_steps ADD COLUMN IF NOT EXISTS result TEXT;")
         op.execute("ALTER TABLE task_steps ADD COLUMN IF NOT EXISTS error TEXT;")
         op.execute("ALTER TABLE task_steps ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;")
+        op.execute("ALTER TABLE task_steps ALTER COLUMN step_metadata DROP NOT NULL;")
+        op.execute("ALTER TABLE task_steps ALTER COLUMN step_metadata SET DEFAULT '{}'::json;")
     else:
         # Generic / SQLite fallback using batch_alter_table
         with op.batch_alter_table("agent_runs") as batch_op:

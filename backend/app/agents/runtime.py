@@ -87,6 +87,7 @@ class AgentRuntime:
             task_id=task_uuid,
             run_type=RunType.EXECUTION.value,
             status=TaskStatus.RUNNING.value,
+            run_metadata={},
             model_used=provider_meta.model_name,
             started_at=utc_now(),
         )

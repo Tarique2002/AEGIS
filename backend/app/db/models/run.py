@@ -35,6 +35,7 @@ class AgentRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     latency_ms: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="running", nullable=False)
+    run_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     state_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
